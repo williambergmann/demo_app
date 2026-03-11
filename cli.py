@@ -37,8 +37,30 @@ def search(api_key, query, max_uses=10):
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        return json.loads(resp.read())
+    import time
+    max_retries = 2
+    for attempt in range(max_retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="replace")
+            if e.code == 400 and "media_type" in error_body and attempt < max_retries:
+                print(f"Retrying due to transient API error ({attempt + 1}/{max_retries})...", file=sys.stderr)
+                time.sleep(1)
+                # Rebuild request for retry
+                req = urllib.request.Request(
+                    "https://api.anthropic.com/v1/messages",
+                    data=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                    method="POST",
+                )
+                continue
+            raise
 
 
 def extract_text(data):
