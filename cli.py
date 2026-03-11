@@ -22,8 +22,7 @@ def search(api_key, query, max_uses=10):
             {"type": "web_search_20260209", "name": "web_search", "max_uses": max_uses}
         ],
         "messages": [
-            {"role": "user", "content": query},
-            {"role": "assistant", "content": "["},
+            {"role": "user", "content": query + "\n\nRemember: respond with ONLY a raw JSON array. No markdown, no commentary, no apologies. Start your response with [ and end with ]."}
         ],
     }).encode("utf-8")
 
@@ -43,11 +42,11 @@ def search(api_key, query, max_uses=10):
 
 
 def extract_text(data):
-    texts = [block["text"] for block in data.get("content", []) if block.get("type") == "text"]
-    # Prepend "[" because we use assistant prefill to force JSON array output
-    if texts:
-        texts[0] = "[" + texts[0]
-    return "\n\n".join(texts)
+    return "\n\n".join(
+        block["text"]
+        for block in data.get("content", [])
+        if block.get("type") == "text"
+    )
 
 
 def extract_sources(data):
