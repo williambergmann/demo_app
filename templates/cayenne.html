@@ -274,7 +274,7 @@
     </div>
 
     <!-- Search button -->
-    <button id="searchBtn" class="btn-primary" onclick="runSearch()" style="margin-bottom:24px;">
+    <button id="searchBtn" class="btn-primary" style="margin-bottom:24px;">
       Search Base Cayenne &ndash; Texas
     </button>
 
@@ -867,6 +867,7 @@ async function runSearch() {
 
 // Init
 renderPresets();
+document.getElementById("searchBtn").onclick = runSearch;
 if (!getApiKey()) showKeyModal();
 </script>
 </body>
