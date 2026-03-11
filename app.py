@@ -150,7 +150,8 @@ def search():
             {"type": "web_search_20260209", "name": "web_search", "max_uses": max_uses}
         ],
         "messages": [
-            {"role": "user", "content": query}
+            {"role": "user", "content": query},
+            {"role": "assistant", "content": "["},
         ],
     }).encode("utf-8")
 
