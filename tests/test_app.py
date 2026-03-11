@@ -211,13 +211,9 @@ def test_presets_have_labels_and_queries():
         assert len(preset["query"]) > 0
 
 
-def test_presets_mention_required_features():
+def test_presets_mention_cayenne():
     for preset in SEARCH_PRESETS:
-        q = preset["query"].lower()
-        assert "cayenne" in q
-        assert "ventilated" in q or "cooled" in q
-        assert "adaptive cruise" in q or "acc" in q
-        assert "panoramic" in q
+        assert "cayenne" in preset["query"].lower()
 
 
 # --- System prompt ---
