@@ -165,13 +165,40 @@ def search():
         method="POST",
     )
 
-    try:
-        resp = urllib.request.urlopen(req, timeout=300)
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8", errors="replace")
-        return app.response_class(error_body, status=e.code, mimetype="application/json")
-    except Exception as e:
-        return jsonify({"error": f"Proxy error: {str(e)}"}), 502
+    # Retry on transient 400 errors (e.g. web search image media_type issues)
+    max_retries = 2
+    last_error_body = None
+    last_error_code = None
+    for attempt in range(max_retries + 1):
+        try:
+            resp = urllib.request.urlopen(req, timeout=300)
+            break  # success
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="replace")
+            last_error_body = error_body
+            last_error_code = e.code
+            # Retry on 400s caused by internal web search image processing
+            if e.code == 400 and "media_type" in error_body and attempt < max_retries:
+                import time
+                time.sleep(1)
+                # Rebuild the request (stream is consumed after first attempt)
+                req = urllib.request.Request(
+                    "https://api.anthropic.com/v1/messages",
+                    data=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                    method="POST",
+                )
+                continue
+            return app.response_class(error_body, status=e.code, mimetype="application/json")
+        except Exception as e:
+            return jsonify({"error": f"Proxy error: {str(e)}"}), 502
+    else:
+        # All retries exhausted
+        return app.response_class(last_error_body, status=last_error_code, mimetype="application/json")
 
     def generate():
         try:

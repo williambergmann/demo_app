@@ -674,7 +674,12 @@ async function runSearch() {
         if (response.status === 401) {
           showError("Invalid API key. Click the 'API Key' button to update it.");
         } else {
-          showError(errData.error.message || errData.error || "API error " + response.status);
+          var msg = errData.error.message || errData.error || "API error " + response.status;
+          if (response.status === 400 && msg.indexOf("media_type") !== -1) {
+            showError("The search hit a temporary API issue with image processing. Please try again — it usually works on retry.");
+          } else {
+            showError(msg);
+          }
         }
       } catch(e) {
         showError("API error (HTTP " + response.status + ")");
