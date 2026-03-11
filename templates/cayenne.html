@@ -128,6 +128,22 @@
     }
     .source-link:hover { border-color: rgba(255,255,255,0.2); color: #fafafa; }
 
+    /* Status log */
+    .status-log {
+      margin-bottom: 16px; padding: 14px 18px; border-radius: 10px;
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+      font-size: 13px; color: #71717a; display: none;
+    }
+    .status-log .status-entry {
+      display: flex; align-items: flex-start; gap: 8px; padding: 4px 0;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .status-log .status-entry .status-icon { flex-shrink: 0; width: 16px; text-align: center; }
+    .status-log .status-entry .status-text { flex: 1; line-height: 1.4; }
+    .status-log .status-entry.active { color: #a1a1aa; }
+    .status-log .status-entry.done { color: #52525b; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
     /* Empty state */
     .empty-state { text-align: center; padding: 60px 20px; color: #3f3f46; }
     .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
@@ -179,6 +195,9 @@
 
     <!-- Error -->
     <div id="errorBox" class="error-box" style="display:none;"></div>
+
+    <!-- Status log -->
+    <div id="statusLog" class="status-log"></div>
 
     <!-- Results -->
     <div id="resultsSection" style="display:none;">
@@ -372,6 +391,25 @@ async function runSearch() {
   searchCount++;
   document.getElementById("searchCounter").textContent = "Search #" + searchCount;
 
+  // Reset status log
+  var statusLog = document.getElementById("statusLog");
+  statusLog.innerHTML = "";
+  statusLog.style.display = "block";
+  var webSearchCount = 0;
+
+  function addStatus(icon, text, className) {
+    var entry = document.createElement("div");
+    entry.className = "status-entry " + (className || "active");
+    entry.innerHTML = '<span class="status-icon">' + icon + '</span><span class="status-text">' + text + '</span>';
+    statusLog.appendChild(entry);
+    statusLog.scrollTop = statusLog.scrollHeight;
+    return entry;
+  }
+
+  function markDone(entry) {
+    if (entry) entry.className = "status-entry done";
+  }
+
   try {
     var response = await fetch("/search", {
       method: "POST",
@@ -390,6 +428,7 @@ async function runSearch() {
         showError(errData.error.message || errData.error || "API error occurred");
       }
       setLoading(false);
+      statusLog.style.display = "none";
       return;
     }
 
@@ -398,6 +437,8 @@ async function runSearch() {
     var buffer = "";
     var fullText = "";
     var sources = [];
+    var currentSearchEntry = null;
+    var writingEntry = null;
 
     while (true) {
       var result = await reader.read();
@@ -417,18 +458,60 @@ async function runSearch() {
           var evt = JSON.parse(raw);
         } catch(e) { continue; }
 
+        // Web search tool use — show what's being searched
+        if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_use") {
+          markDone(currentSearchEntry);
+          markDone(writingEntry);
+          writingEntry = null;
+          webSearchCount++;
+          currentSearchEntry = addStatus('<span class="spinner"></span>', "Searching the web...");
+        }
+
+        // Web search input delta — show the actual query
+        if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "input_json_delta") {
+          // The query comes in as partial JSON, we'll update when the block stops
+        }
+
+        // Web search tool use complete — show query
+        if (evt.type === "content_block_stop" && currentSearchEntry && !currentSearchEntry.classList.contains("done")) {
+          // Mark search as done
+          markDone(currentSearchEntry);
+          currentSearchEntry = null;
+        }
+
+        // Web search results — show what was found
+        if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_result") {
+          markDone(currentSearchEntry);
+          currentSearchEntry = null;
+          var searchResults = (evt.content_block.content || []).filter(function(r) { return r.type === "web_search_result"; });
+          if (searchResults.length > 0) {
+            var domains = [];
+            searchResults.forEach(function(r) {
+              sources.push({ title: r.title, url: r.url });
+              try { var h = new URL(r.url).hostname.replace("www.", ""); if (domains.indexOf(h) === -1) domains.push(h); } catch(e) {}
+            });
+            addStatus("&#10003;", "Search #" + webSearchCount + " found " + searchResults.length + " results from " + domains.slice(0, 4).join(", ") + (domains.length > 4 ? "..." : ""), "done");
+          }
+        }
+
         // Stream text deltas
         if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "text_delta") {
+          if (!writingEntry) {
+            markDone(currentSearchEntry);
+            currentSearchEntry = null;
+            writingEntry = addStatus("&#9998;", "Writing results...");
+          }
           fullText += evt.delta.text;
           document.getElementById("resultsText").textContent = fullText;
         }
-
-        // Collect web search results for sources
-        if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_result") {
-          var results = (evt.content_block.content || []).filter(function(r) { return r.type === "web_search_result"; });
-          results.forEach(function(r) { sources.push({ title: r.title, url: r.url }); });
-        }
       }
+    }
+
+    // Mark final entries done
+    markDone(currentSearchEntry);
+    markDone(writingEntry);
+    if (webSearchCount > 0) {
+      addStatus("&#10003;", "Done \u2014 " + webSearchCount + " web search" + (webSearchCount !== 1 ? "es" : "") + " completed, " + sources.length + " sources found", "done");
     }
 
     // Show sources at the end
@@ -452,7 +535,11 @@ async function runSearch() {
       document.getElementById("resultsText").textContent = "No results found. Try broadening your search.";
     }
   } catch (err) {
-    showError("Search failed: " + err.message);
+    var errMsg = err.message || "Unknown error";
+    if (errMsg === "Load failed" || errMsg === "Failed to fetch" || errMsg.indexOf("network") !== -1) {
+      errMsg = "Connection lost — the search may have timed out. Try again, or use a simpler preset like 'Feeling Lucky' for faster results.";
+    }
+    showError("Search failed: " + errMsg);
   } finally {
     setLoading(false);
   }
