@@ -90,7 +90,8 @@ Each element represents one vehicle listing:
     "location": "Dallas, TX",
     "vin": "WP1AA2AY3KDA12345",
     "listing_url": "https://...",
-    "image_url": "https://...(main photo URL from listing if visible)...",
+    "image_url": "https://...(main photo URL from listing)...",
+    "carfax_url": "https://...(free dealer-provided CARFAX link, or null)...",
     "features_confirmed": ["Ventilated Seats", "Adaptive Cruise Control", "Panoramic Roof"],
     "features_unconfirmed": ["Panoramic Roof"],
     "red_flags": ["2 owners"],
@@ -103,13 +104,18 @@ Each element represents one vehicle listing:
 ]
 
 Rules for JSON output:
-- image_url: Include the direct URL to the main listing photo if you can find one in the page. \
-If not available, use null.
+- image_url: IMPORTANT — always try to find the main photo URL for the listing. Look for og:image meta tags, \
+CDN image URLs (e.g. from cargurus, cars.com, carvana media servers), or any direct .jpg/.png image URL shown \
+in the search results for that vehicle. If you find multiple images, pick the best exterior shot. \
+Only use null if you truly cannot find any image URL.
 - verdict must be one of: "Good", "Caution", "Avoid"
 - features_confirmed: only features explicitly confirmed in the listing
 - features_unconfirmed: the three must-have features NOT confirmed (from: Ventilated Seats, \
 Adaptive Cruise Control, Panoramic Roof)
-- If VIN is available, ALWAYS include it — the app will auto-generate the CARFAX link
+- If VIN is available, ALWAYS include it
+- carfax_url: If the dealer or listing site provides a FREE CARFAX report link, include it. \
+Do NOT generate a carfax.com paid report URL. Only include URLs that lead to free, \
+dealer-provided CARFAX reports (often on the listing page itself). Use null if no free report is available.
 - Output ONLY the JSON array. No other text before or after it."""
 
 
