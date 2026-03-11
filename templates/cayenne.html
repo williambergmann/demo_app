@@ -364,6 +364,14 @@ async function runSearch() {
   setLoading(true);
   hideError();
 
+  // Show results area immediately for streaming
+  document.getElementById("emptyState").style.display = "none";
+  document.getElementById("resultsSection").style.display = "block";
+  document.getElementById("resultsText").textContent = "";
+  document.getElementById("sourcesSection").style.display = "none";
+  searchCount++;
+  document.getElementById("searchCounter").textContent = "Search #" + searchCount;
+
   try {
     var response = await fetch("/search", {
       method: "POST",
@@ -374,30 +382,75 @@ async function runSearch() {
       body: JSON.stringify({ query: query, max_uses: SEARCH_PRESETS[selectedPreset].max_uses || 10 })
     });
 
-    var data = await response.json();
-
-    if (data.error) {
+    if (!response.ok) {
+      var errData = await response.json();
       if (response.status === 401) {
         showError("Invalid API key. Click the 'API Key' button to update it.");
       } else {
-        showError(data.error.message || data.error || "API error occurred");
+        showError(errData.error.message || errData.error || "API error occurred");
       }
       setLoading(false);
       return;
     }
 
-    var textBlocks = (data.content || [])
-      .filter(function(item) { return item.type === "text"; })
-      .map(function(item) { return item.text; })
-      .join("\n\n");
+    var reader = response.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = "";
+    var fullText = "";
+    var sources = [];
 
-    var webResults = (data.content || [])
-      .filter(function(item) { return item.type === "web_search_tool_result" || item.type === "server_tool_use"; })
-      .flatMap(function(item) { return item.content || []; })
-      .filter(function(item) { return item.type === "web_search_result"; })
-      .map(function(item) { return { title: item.title, url: item.url }; });
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+      buffer += decoder.decode(result.value, { stream: true });
 
-    showResults(textBlocks || "No results found. Try broadening your search.", webResults);
+      var lines = buffer.split("\n");
+      buffer = lines.pop();
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line.startsWith("data: ")) continue;
+        var raw = line.slice(6);
+        if (raw === "[DONE]") continue;
+
+        try {
+          var evt = JSON.parse(raw);
+        } catch(e) { continue; }
+
+        // Stream text deltas
+        if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "text_delta") {
+          fullText += evt.delta.text;
+          document.getElementById("resultsText").textContent = fullText;
+        }
+
+        // Collect web search results for sources
+        if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_result") {
+          var results = (evt.content_block.content || []).filter(function(r) { return r.type === "web_search_result"; });
+          results.forEach(function(r) { sources.push({ title: r.title, url: r.url }); });
+        }
+      }
+    }
+
+    // Show sources at the end
+    var sourcesList = document.getElementById("sourcesList");
+    var sourcesSection = document.getElementById("sourcesSection");
+    sourcesList.innerHTML = "";
+    if (sources.length > 0) {
+      sourcesSection.style.display = "block";
+      sources.slice(0, 20).forEach(function(src) {
+        var a = document.createElement("a");
+        a.className = "source-link";
+        a.href = src.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        try { a.textContent = src.title || new URL(src.url).hostname; } catch(e) { a.textContent = src.url; }
+        sourcesList.appendChild(a);
+      });
+    }
+
+    if (!fullText) {
+      document.getElementById("resultsText").textContent = "No results found. Try broadening your search.";
+    }
   } catch (err) {
     showError("Search failed: " + err.message);
   } finally {

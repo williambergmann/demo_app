@@ -1,7 +1,8 @@
 import json
 import urllib.request
 import urllib.error
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
+import re
 
 app = Flask(__name__)
 
@@ -125,7 +126,8 @@ def search():
 
     payload = json.dumps({
         "model": "claude-sonnet-4-6",
-        "max_tokens": 8000,
+        "max_tokens": 16000,
+        "stream": True,
         "system": SYSTEM_PROMPT,
         "tools": [
             {"type": "web_search_20260209", "name": "web_search", "max_uses": max_uses}
@@ -147,14 +149,22 @@ def search():
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = resp.read()
-            return app.response_class(data, status=resp.status, mimetype="application/json")
+        resp = urllib.request.urlopen(req, timeout=300)
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="replace")
         return app.response_class(error_body, status=e.code, mimetype="application/json")
     except Exception as e:
         return jsonify({"error": f"Proxy error: {str(e)}"}), 502
+
+    def generate():
+        try:
+            for line in resp:
+                yield line
+        finally:
+            resp.close()
+
+    return Response(generate(), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 if __name__ == "__main__":
