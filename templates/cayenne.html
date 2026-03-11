@@ -761,7 +761,7 @@ async function runSearch() {
               sources.push({ title: r.title, url: r.url });
               try { var h = new URL(r.url).hostname.replace("www.", ""); if (domains.indexOf(h) === -1) domains.push(h); } catch(e) {}
             });
-            addStatus("&#10003;", "Search #" + webSearchCount + " found " + searchResults.length + " results from " + domains.slice(0, 4).join(", ") + (domains.length > 4 ? "..." : ""), "done");
+            addStatus("&#10003;", "Checked " + domains.slice(0, 4).join(", ") + (domains.length > 4 ? "..." : ""), "done");
           }
         }
 
