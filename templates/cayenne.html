@@ -804,10 +804,6 @@ async function runSearch() {
     document.getElementById("resultsSection").style.display = "block";
 
     // Try to extract JSON from any text block and render cards
-    // Prepend "[" because we use assistant prefill to force JSON array output
-    if (allTextBlocks.length > 0) {
-      allTextBlocks[0] = "[" + allTextBlocks[0];
-    }
     var vehicles = null;
     var fullText = allTextBlocks.join("\n");
 

@@ -150,8 +150,7 @@ def search():
             {"type": "web_search_20260209", "name": "web_search", "max_uses": max_uses}
         ],
         "messages": [
-            {"role": "user", "content": query},
-            {"role": "assistant", "content": "["},
+            {"role": "user", "content": query + "\n\nRemember: respond with ONLY a raw JSON array. No markdown, no commentary, no apologies. Start your response with [ and end with ]."}
         ],
     }).encode("utf-8")
 
