@@ -252,6 +252,7 @@
       <div id="statusDot" class="status-dot"></div>
       <h1>Cayenne Finder</h1>
       <div style="flex:1"></div>
+      <button class="btn-key" onclick="runDemo()" style="color:#facc15;border-color:rgba(234,179,8,0.3);">Demo</button>
       <button class="btn-key" onclick="showKeyModal()">API Key</button>
     </div>
     <p class="subtitle">AI-powered search across Cars.com, Carvana, CarMax, AutoTrader, CarGurus, Edmunds, CARFAX, Autotempest &amp; visor.vin</p>
@@ -338,6 +339,69 @@ var SEARCH_PRESETS = [
   {
     label: "Custom Search",
     query: ""
+  }
+];
+
+var DEMO_DATA = [
+  {
+    year: 2019,
+    model: "Cayenne",
+    trim: "Base",
+    price: "$33,998",
+    mileage: "62,983 mi",
+    dealer: "Autos of Dallas",
+    location: "Plano, TX",
+    vin: "WP1AA2AY3KDA48498",
+    listing_url: "https://www.cargurus.com/Cars/share/439551267",
+    image_url: null,
+    features_confirmed: ["Panoramic Roof", "Adaptive Cruise Control"],
+    features_unconfirmed: ["Ventilated Seats"],
+    red_flags: [],
+    verdict: "Good",
+    cpo: false,
+    distance_from_dfw: "~15 miles",
+    owners: "2",
+    notes: "Clean title, well-equipped with Premium Package. Confirm ventilated seats on the window sticker or in person."
+  },
+  {
+    year: 2020,
+    model: "Cayenne",
+    trim: "Base",
+    price: "$36,450",
+    mileage: "41,200 mi",
+    dealer: "Park Place Porsche",
+    location: "Dallas, TX",
+    vin: "WP1AA2AY5LDA23001",
+    listing_url: null,
+    image_url: null,
+    features_confirmed: ["Ventilated Seats", "Adaptive Cruise Control", "Panoramic Roof"],
+    features_unconfirmed: [],
+    red_flags: ["Minor front damage reported"],
+    verdict: "Caution",
+    cpo: true,
+    distance_from_dfw: "~8 miles",
+    owners: "1",
+    notes: "Porsche CPO with Premium Plus Package confirmed. Minor incident on CARFAX but CPO inspection passed."
+  },
+  {
+    year: 2021,
+    model: "Cayenne",
+    trim: "S",
+    price: "$41,900",
+    mileage: "38,750 mi",
+    dealer: "CarMax Houston",
+    location: "Houston, TX",
+    vin: "WP1AB2AY1MDA55102",
+    listing_url: null,
+    image_url: null,
+    features_confirmed: ["Ventilated Seats", "Panoramic Roof"],
+    features_unconfirmed: ["Adaptive Cruise Control"],
+    red_flags: ["3 owners", "Out of Porsche warranty"],
+    verdict: "Caution",
+    cpo: false,
+    distance_from_dfw: "~240 miles",
+    owners: "3",
+    notes: "V8 twin-turbo Cayenne S. Three owners is a yellow flag at this age. ACC not confirmed in listing — verify."
   }
 ];
 
@@ -515,6 +579,15 @@ function showFallbackText(text) {
   document.getElementById("resultsText").textContent = text;
 }
 
+function runDemo() {
+  document.getElementById("emptyState").style.display = "none";
+  document.getElementById("statusLog").style.display = "none";
+  document.getElementById("resultsSection").style.display = "block";
+  searchCount++;
+  document.getElementById("searchCounter").textContent = "Demo #" + searchCount;
+  renderVehicleCards(DEMO_DATA);
+}
+
 async function runSearch() {
   if (isLoading) return;
 
@@ -576,11 +649,15 @@ async function runSearch() {
     });
 
     if (!response.ok) {
-      var errData = await response.json();
-      if (response.status === 401) {
-        showError("Invalid API key. Click the 'API Key' button to update it.");
-      } else {
-        showError(errData.error.message || errData.error || "API error occurred");
+      try {
+        var errData = await response.json();
+        if (response.status === 401) {
+          showError("Invalid API key. Click the 'API Key' button to update it.");
+        } else {
+          showError(errData.error.message || errData.error || "API error " + response.status);
+        }
+      } catch(e) {
+        showError("API error (HTTP " + response.status + ")");
       }
       setLoading(false);
       statusLog.style.display = "none";
@@ -595,7 +672,9 @@ async function runSearch() {
     var sources = [];
     var currentSearchEntry = null;
     var writingEntry = null;
-    var inTextBlock = false;
+    // Track block types by index so content_block_stop knows what ended
+    var blockTypes = {};
+    var streamError = null;
 
     while (true) {
       var result = await reader.read();
@@ -615,7 +694,18 @@ async function runSearch() {
           var evt = JSON.parse(raw);
         } catch(e) { continue; }
 
-        // Web search tool use
+        // Handle API errors mid-stream
+        if (evt.type === "error") {
+          streamError = (evt.error && evt.error.message) || "API error during search";
+          continue;
+        }
+
+        // Track block types by index
+        if (evt.type === "content_block_start" && evt.content_block) {
+          blockTypes[evt.index] = evt.content_block.type;
+        }
+
+        // Web search tool use starting
         if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_use") {
           markDone(currentSearchEntry);
           markDone(writingEntry);
@@ -624,19 +714,20 @@ async function runSearch() {
           currentSearchEntry = addStatus('<span class="spinner"></span>', "Searching the web...");
         }
 
-        // Web search tool use complete
-        if (evt.type === "content_block_stop" && currentSearchEntry && !currentSearchEntry.classList.contains("done")) {
-          markDone(currentSearchEntry);
-          currentSearchEntry = null;
-        }
-
-        // Text block ended — save it
-        if (evt.type === "content_block_stop" && inTextBlock) {
-          if (currentBlockText.trim()) {
-            allTextBlocks.push(currentBlockText);
+        // Content block stopped — use tracked type to know what ended
+        if (evt.type === "content_block_stop") {
+          var stoppedType = blockTypes[evt.index];
+          if (stoppedType === "web_search_tool_use") {
+            markDone(currentSearchEntry);
+            currentSearchEntry = null;
+          } else if (stoppedType === "text") {
+            markDone(writingEntry);
+            writingEntry = null;
+            if (currentBlockText.trim()) {
+              allTextBlocks.push(currentBlockText);
+            }
+            currentBlockText = "";
           }
-          currentBlockText = "";
-          inTextBlock = false;
         }
 
         // Web search results
@@ -659,7 +750,6 @@ async function runSearch() {
           markDone(writingEntry);
           writingEntry = null;
           currentBlockText = "";
-          inTextBlock = true;
         }
 
         // Stream text deltas — collect (we render cards at the end)
@@ -676,6 +766,11 @@ async function runSearch() {
     // Save any remaining text block
     if (currentBlockText.trim()) {
       allTextBlocks.push(currentBlockText);
+    }
+
+    // If we got an API error mid-stream, show it
+    if (streamError) {
+      showError(streamError);
     }
 
     // Mark final entries done
