@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cayenne Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #09090b; color: #fafafa; font-family: 'DM Sans', 'Helvetica Neue', sans-serif; min-height: 100vh; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-box {
+      background: #18181b; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 32px; max-width: 440px; width: 90%;
+    }
+    .modal-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .modal-box p { font-size: 13px; color: #71717a; margin-bottom: 20px; line-height: 1.5; }
+    .modal-box input {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05);
+      color: #fafafa; font-size: 14px; font-family: 'JetBrains Mono', monospace;
+      outline: none; margin-bottom: 16px;
+    }
+    .modal-box input:focus { border-color: rgba(255,255,255,0.3); }
+
+    /* Buttons */
+    .btn-primary {
+      padding: 12px 32px; border-radius: 10px; border: none;
+      background: linear-gradient(135deg, #d4002a 0%, #a30021 100%);
+      color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit; letter-spacing: -0.01em; transition: all 0.2s;
+    }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-primary:disabled {
+      background: rgba(255,255,255,0.05); color: #71717a; cursor: not-allowed; filter: none;
+    }
+    .btn-full { width: 100%; }
+
+    .btn-preset {
+      padding: 8px 16px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08); background: transparent;
+      color: #a1a1aa; font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-preset:hover { border-color: rgba(255,255,255,0.2); color: #fafafa; }
+    .btn-preset.active {
+      border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #fafafa;
+    }
+
+    .btn-key {
+      background: transparent; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 6px 10px; cursor: pointer;
+      color: #71717a; font-size: 12px; font-family: inherit; transition: all 0.15s;
+    }
+    .btn-key:hover { border-color: rgba(255,255,255,0.25); color: #a1a1aa; }
+
+    /* Header */
+    .header {
+      border-bottom: 1px solid rgba(255,255,255,0.06); padding: 24px 32px;
+    }
+    .header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+      box-shadow: 0 0 8px rgba(34,197,94,0.5); transition: all 0.3s;
+    }
+    .status-dot.loading {
+      background: #eab308; box-shadow: 0 0 8px rgba(234,179,8,0.5);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+    .header .subtitle { font-size: 13px; color: #71717a; margin: 4px 0 0 20px; }
+
+    /* Content */
+    .content { padding: 24px 32px; max-width: 960px; }
+    .section-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #52525b; margin-bottom: 10px;
+    }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+    /* Custom query */
+    .custom-textarea {
+      width: 100%; min-height: 80px; padding: 14px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03);
+      color: #fafafa; font-size: 14px; font-family: inherit; resize: vertical; outline: none;
+    }
+    .custom-textarea:focus { border-color: rgba(255,255,255,0.25); }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.2); border-top-color: #71717a;
+      border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    /* Error */
+    .error-box {
+      padding: 14px 18px; border-radius: 10px;
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+      color: #fca5a5; font-size: 13px; margin-bottom: 20px;
+    }
+
+    /* Results */
+    .results-box {
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px; padding: 24px;
+    }
+    .results-text {
+      font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.75;
+      color: #d4d4d8; white-space: pre-wrap; word-break: break-word; margin: 0;
+    }
+
+    /* Sources */
+    .sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+    .source-link {
+      padding: 4px 10px; border-radius: 6px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      color: #a1a1aa; font-size: 11px; text-decoration: none; transition: all 0.15s;
+      max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .source-link:hover { border-color: rgba(255,255,255,0.2); color: #fafafa; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 60px 20px; color: #3f3f46; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state .title { font-size: 15px; font-weight: 500; color: #52525b; }
+    .empty-state .desc { font-size: 13px; color: #3f3f46; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- API Key Modal -->
+  <div id="keyModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h2>Enter your Anthropic API Key</h2>
+      <p>Your key is stored locally in your browser and sent only to this server's proxy endpoint. It is never logged or stored server-side.</p>
+      <input type="password" id="keyInput" placeholder="sk-ant-..." />
+      <button class="btn-primary btn-full" onclick="saveApiKey()">Save &amp; Continue</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-row">
+      <div id="statusDot" class="status-dot"></div>
+      <h1>Cayenne Finder</h1>
+      <div style="flex:1"></div>
+      <button class="btn-key" onclick="showKeyModal()">API Key</button>
+    </div>
+    <p class="subtitle">AI-powered search across Cars.com, Carvana, CarMax, AutoTrader, CarGurus, Edmunds, CARFAX, Autotempest &amp; visor.vin</p>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Presets -->
+    <div>
+      <div class="section-label">Search Presets</div>
+      <div id="presetButtons" class="presets"></div>
+    </div>
+
+    <!-- Custom query (hidden by default) -->
+    <div id="customBox" style="display:none; margin-bottom:20px;">
+      <textarea id="customQuery" class="custom-textarea"
+        placeholder="Describe what you're looking for... e.g., '2021 Cayenne S with Premium Plus Package under $40K within 500 miles of Dallas'"></textarea>
+    </div>
+
+    <!-- Search button -->
+    <button id="searchBtn" class="btn-primary" onclick="runSearch()" style="margin-bottom:24px;">
+      Search Base Cayenne &ndash; Texas
+    </button>
+
+    <!-- Error -->
+    <div id="errorBox" class="error-box" style="display:none;"></div>
+
+    <!-- Results -->
+    <div id="resultsSection" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div class="section-label" style="margin-bottom:0;">Results</div>
+        <div id="searchCounter" style="font-size:12px; color:#52525b;"></div>
+      </div>
+      <div class="results-box">
+        <pre id="resultsText" class="results-text"></pre>
+      </div>
+      <div id="sourcesSection" style="display:none; margin-top:16px;">
+        <div class="section-label">Sources Searched</div>
+        <div id="sourcesList" class="sources"></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="empty-state">
+      <div class="icon">&#128270;</div>
+      <div class="title">Select a preset and hit search</div>
+      <div class="desc">Claude will search Cars.com, Carvana, CarMax, AutoTrader, CarGurus, Edmunds, CARFAX, Autotempest &amp; visor.vin — all at once</div>
+    </div>
+  </div>
+
+<script>
+var SEARCH_PRESETS = [
+  {
+    label: "Base Cayenne \u2013 Texas",
+    query: "Search cars.com, carvana.com, carmax.com, carfax.com, autotrader.com, cargurus.com, autotempest.com, and visor.vin for used 2019-2024 Porsche Cayenne base models for sale in or near Texas (Dallas, Houston, Austin, San Antonio). Price range $25,000-$35,000. Must have Premium Plus Package OR must list ALL THREE of: ventilated/cooled seats, adaptive cruise control, panoramic roof. Return each result with: year, trim, mileage, price, dealer name, city/state, VIN if visible, link to listing, and which of the three features (ventilated seats, ACC, panoramic roof) are confirmed in the listing. For any VINs found, also check visor.vin for vehicle history. Flag any that mention accidents, branded titles, or salvage. Note Porsche CPO status. Prioritize one-owner and low-mileage cars."
+  },
+  {
+    label: "Base Cayenne \u2013 Nationwide",
+    query: "Search cars.com, carvana.com, carmax.com, edmunds.com, carfax.com, autotrader.com, cargurus.com, autotempest.com, and visor.vin for used 2019-2024 Porsche Cayenne base models for sale nationwide in the US. Price range $25,000-$35,000. Must have Premium Plus Package OR must list ALL THREE of: ventilated/cooled seats, adaptive cruise control, panoramic roof. Return each result with: year, trim, mileage, price, dealer name, city/state, VIN if visible, link to listing, and which of the three features (ventilated seats, ACC, panoramic roof) are confirmed in the listing. For any VINs found, also check visor.vin for vehicle history. Flag any that mention accidents, branded titles, or salvage. Note Porsche CPO status. Prioritize one-owner, low-mileage, and clean CARFAX cars."
+  },
+  {
+    label: "E-Hybrid \u2013 CARB States",
+    query: "Search cars.com, carvana.com, carmax.com, edmunds.com, autotrader.com, cargurus.com, autotempest.com, and visor.vin for used 2020-2024 Porsche Cayenne E-Hybrid for sale in California, Oregon, Washington, or other CARB states. Price range $28,000-$38,000. Must have ventilated seats, adaptive cruise control, and panoramic roof. Prefer cars with 7.2 kW onboard charger and Sport Chrono. Return each result with: year, trim, mileage, price, dealer name, city/state, VIN if visible, link to listing, confirmed features, and whether it was originally sold in a CARB state (10yr/150K battery warranty). For any VINs found, also check visor.vin for vehicle history. Flag any with HV battery replacements, accidents, or branded titles. Note Porsche CPO status."
+  },
+  {
+    label: "E-Hybrid \u2013 Nationwide",
+    query: "Search cars.com, carvana.com, carmax.com, edmunds.com, carfax.com, autotrader.com, cargurus.com, autotempest.com, and visor.vin for used 2020-2024 Porsche Cayenne E-Hybrid for sale nationwide. Price under $38,000. Must have ventilated/cooled seats, adaptive cruise control, panoramic roof. Return each result with: year, trim, mileage, price, dealer name, city/state, VIN if visible, link to listing, and confirmed features. Flag cars originally sold in CARB states (better battery warranty). For any VINs found, also check visor.vin for vehicle history. Flag any with accidents, branded titles, HV battery issues. Note Porsche CPO status."
+  },
+  {
+    label: "Cayenne S \u2013 Texas",
+    query: "Search cars.com, carvana.com, carmax.com, edmunds.com, autotrader.com, cargurus.com, autotempest.com, and visor.vin for used 2019-2023 Porsche Cayenne S for sale in Texas. Price range $30,000-$42,000. Must have ventilated seats, adaptive cruise control, panoramic roof. Return each result with: year, trim, mileage, price, dealer name, city/state, VIN if visible, link to listing, confirmed features. For any VINs found, also check visor.vin for vehicle history. Prefer Porsche CPO. Flag accidents or branded titles."
+  },
+  {
+    label: "Custom Search",
+    query: ""
+  }
+];
+
+var selectedPreset = 0;
+var searchCount = 0;
+var isLoading = false;
+
+function getApiKey() {
+  return localStorage.getItem("cayenne_api_key") || "";
+}
+
+function showKeyModal() {
+  document.getElementById("keyModal").style.display = "flex";
+  document.getElementById("keyInput").value = getApiKey();
+  document.getElementById("keyInput").focus();
+}
+
+function saveApiKey() {
+  var key = document.getElementById("keyInput").value.trim();
+  if (key) {
+    localStorage.setItem("cayenne_api_key", key);
+    document.getElementById("keyModal").style.display = "none";
+  }
+}
+
+// Enter key in API key input
+document.getElementById("keyInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") saveApiKey();
+});
+
+function selectPreset(index) {
+  selectedPreset = index;
+  var buttons = document.querySelectorAll("#presetButtons .btn-preset");
+  buttons.forEach(function(btn, i) {
+    btn.classList.toggle("active", i === index);
+  });
+
+  var isCustom = index === SEARCH_PRESETS.length - 1;
+  document.getElementById("customBox").style.display = isCustom ? "block" : "none";
+  document.getElementById("searchBtn").textContent = "Search " + SEARCH_PRESETS[index].label;
+}
+
+function renderPresets() {
+  var container = document.getElementById("presetButtons");
+  SEARCH_PRESETS.forEach(function(preset, i) {
+    var btn = document.createElement("button");
+    btn.className = "btn-preset" + (i === 0 ? " active" : "");
+    btn.textContent = preset.label;
+    btn.onclick = function() { selectPreset(i); };
+    container.appendChild(btn);
+  });
+}
+
+function setLoading(loading) {
+  isLoading = loading;
+  var btn = document.getElementById("searchBtn");
+  var dot = document.getElementById("statusDot");
+
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Searching multiple sites...';
+    dot.classList.add("loading");
+  } else {
+    btn.disabled = false;
+    btn.textContent = "Search " + SEARCH_PRESETS[selectedPreset].label;
+    dot.classList.remove("loading");
+  }
+}
+
+function showError(msg) {
+  var box = document.getElementById("errorBox");
+  box.textContent = msg;
+  box.style.display = "block";
+}
+
+function hideError() {
+  document.getElementById("errorBox").style.display = "none";
+}
+
+function showResults(text, sources) {
+  document.getElementById("emptyState").style.display = "none";
+  document.getElementById("resultsSection").style.display = "block";
+  document.getElementById("resultsText").textContent = text;
+  searchCount++;
+  document.getElementById("searchCounter").textContent = "Search #" + searchCount;
+
+  var sourcesSection = document.getElementById("sourcesSection");
+  var sourcesList = document.getElementById("sourcesList");
+  sourcesList.innerHTML = "";
+
+  if (sources && sources.length > 0) {
+    sourcesSection.style.display = "block";
+    sources.slice(0, 20).forEach(function(src) {
+      var a = document.createElement("a");
+      a.className = "source-link";
+      a.href = src.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      try {
+        a.textContent = src.title || new URL(src.url).hostname;
+      } catch(e) {
+        a.textContent = src.url;
+      }
+      sourcesList.appendChild(a);
+    });
+  } else {
+    sourcesSection.style.display = "none";
+  }
+}
+
+async function runSearch() {
+  if (isLoading) return;
+
+  var apiKey = getApiKey();
+  if (!apiKey) {
+    showKeyModal();
+    return;
+  }
+
+  var query = selectedPreset === SEARCH_PRESETS.length - 1
+    ? document.getElementById("customQuery").value
+    : SEARCH_PRESETS[selectedPreset].query;
+
+  if (!query.trim()) {
+    showError("Please enter a search query.");
+    return;
+  }
+
+  setLoading(true);
+  hideError();
+
+  try {
+    var response = await fetch("/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": apiKey
+      },
+      body: JSON.stringify({ query: query })
+    });
+
+    var data = await response.json();
+
+    if (data.error) {
+      if (response.status === 401) {
+        showError("Invalid API key. Click the 'API Key' button to update it.");
+      } else {
+        showError(data.error.message || data.error || "API error occurred");
+      }
+      setLoading(false);
+      return;
+    }
+
+    var textBlocks = (data.content || [])
+      .filter(function(item) { return item.type === "text"; })
+      .map(function(item) { return item.text; })
+      .join("\n\n");
+
+    var webResults = (data.content || [])
+      .filter(function(item) { return item.type === "web_search_tool_result"; })
+      .flatMap(function(item) { return item.content || []; })
+      .filter(function(item) { return item.type === "web_search_result"; })
+      .map(function(item) { return { title: item.title, url: item.url }; });
+
+    showResults(textBlocks || "No results found. Try broadening your search.", webResults);
+  } catch (err) {
+    showError("Search failed: " + err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Init
+renderPresets();
+if (!getApiKey()) showKeyModal();
+</script>
+</body>
+</html>
