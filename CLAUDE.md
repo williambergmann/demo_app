@@ -8,9 +8,17 @@
 
 ## Anthropic API
 - API version header: `anthropic-version: 2023-06-01`
-- Web search requires beta header: `anthropic-beta: web-search-2025-03-05`
-- Web search tool type: `web_search_20250305`
+- Web search is GA (no beta header needed)
+- Web search tool type: `web_search_20260209` (supports dynamic filtering with Claude 4.6)
+- Previous tool type `web_search_20250305` still works but lacks dynamic filtering
 - Current model: `claude-sonnet-4-6`
+
+## CLI
+- `cli.py` — run searches from the command line
+- Usage: `ANTHROPIC_API_KEY=sk-... python cli.py --preset 0` (or pass a custom query)
+- `--list-presets` / `-l` to see available presets
+- `--json` / `-j` for raw API response
+- `--max-uses` / `-m` to limit web searches (default: 10)
 
 ## Deployment
 - Render deploys from `master` branch

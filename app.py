@@ -5,6 +5,29 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
+SEARCH_PRESETS = [
+    {
+        "label": "Base Cayenne \u2013 Texas",
+        "query": "Used 2019-2024 Porsche Cayenne base, $25K-$35K, in or near Texas. Prioritize one-owner, low-mileage.",
+    },
+    {
+        "label": "Base Cayenne \u2013 Nationwide",
+        "query": "Used 2019-2024 Porsche Cayenne base, $25K-$35K, nationwide US. Prioritize one-owner, low-mileage, clean CARFAX.",
+    },
+    {
+        "label": "E-Hybrid \u2013 CARB States",
+        "query": "Used 2020-2024 Porsche Cayenne E-Hybrid, $28K-$38K, in CA/OR/WA/CARB states. Prefer 7.2 kW charger and Sport Chrono. Flag CARB-state original sale (10yr/150K battery warranty) and any HV battery issues.",
+    },
+    {
+        "label": "E-Hybrid \u2013 Nationwide",
+        "query": "Used 2020-2024 Porsche Cayenne E-Hybrid, under $38K, nationwide. Flag CARB-state original sale (better battery warranty) and any HV battery issues.",
+    },
+    {
+        "label": "Cayenne S \u2013 Texas",
+        "query": "Used 2019-2023 Porsche Cayenne S, $30K-$42K, in Texas. Prefer Porsche CPO.",
+    },
+]
+
 SYSTEM_PROMPT = """You are a used car research assistant specializing in Porsche Cayenne vehicles. \
 Search the web thoroughly using multiple car listing sites including cars.com, carvana.com, carmax.com, \
 edmunds.com, carfax.com, autotrader.com, cargurus.com, autotempest.com, and visor.vin.
@@ -91,10 +114,10 @@ def search():
 
     payload = json.dumps({
         "model": "claude-sonnet-4-6",
-        "max_tokens": 16000,
+        "max_tokens": 8000,
         "system": SYSTEM_PROMPT,
         "tools": [
-            {"type": "web_search_20250305", "name": "web_search", "max_uses": 10}
+            {"type": "web_search_20260209", "name": "web_search", "max_uses": 10}
         ],
         "messages": [
             {"role": "user", "content": query}
@@ -108,7 +131,6 @@ def search():
             "Content-Type": "application/json",
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
-            "anthropic-beta": "web-search-2025-03-05",
         },
         method="POST",
     )
