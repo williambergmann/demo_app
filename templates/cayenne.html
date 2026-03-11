@@ -387,7 +387,7 @@ async function runSearch() {
       .join("\n\n");
 
     var webResults = (data.content || [])
-      .filter(function(item) { return item.type === "web_search_tool_result"; })
+      .filter(function(item) { return item.type === "web_search_tool_result" || item.type === "server_tool_use"; })
       .flatMap(function(item) { return item.content || []; })
       .filter(function(item) { return item.type === "web_search_result"; })
       .map(function(item) { return { title: item.title, url: item.url }; });
