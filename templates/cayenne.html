@@ -494,6 +494,14 @@ async function runSearch() {
           }
         }
 
+        // New text block starting — reset to only keep the last (final) text block
+        if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "text") {
+          markDone(writingEntry);
+          writingEntry = null;
+          fullText = "";
+          document.getElementById("resultsText").textContent = "";
+        }
+
         // Stream text deltas
         if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "text_delta") {
           if (!writingEntry) {
