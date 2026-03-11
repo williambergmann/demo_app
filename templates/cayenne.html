@@ -646,7 +646,7 @@ async function runSearch() {
         "Content-Type": "application/json",
         "X-Api-Key": apiKey
       },
-      body: JSON.stringify({ query: query, max_uses: SEARCH_PRESETS[selectedPreset].max_uses || 10 })
+      body: JSON.stringify({ query: query, max_uses: SEARCH_PRESETS[selectedPreset].max_uses || 5 })
     });
 
     if (!response.ok) {

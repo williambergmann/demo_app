@@ -135,9 +135,9 @@ def search():
     if not query:
         return jsonify({"error": "Query is required"}), 400
 
-    max_uses = body.get("max_uses", 10)
+    max_uses = body.get("max_uses", 5)
     if not isinstance(max_uses, int) or max_uses < 1:
-        max_uses = 10
+        max_uses = 5
     if max_uses > 20:
         max_uses = 20
 
