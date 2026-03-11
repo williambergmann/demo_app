@@ -409,6 +409,7 @@ var DEMO_DATA = [
 var selectedPreset = 0;
 var searchCount = 0;
 var isLoading = false;
+var abortController = null;
 
 function getApiKey() {
   return (localStorage.getItem("cayenne_api_key") || "").replace(/\s/g, "");
@@ -462,14 +463,24 @@ function setLoading(loading) {
   var dot = document.getElementById("statusDot");
 
   if (loading) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Searching multiple sites...';
+    btn.onclick = stopSearch;
+    btn.innerHTML = '<span class="spinner"></span> Stop Search';
+    btn.style.background = "#991b1b";
     dot.classList.add("loading");
   } else {
-    btn.disabled = false;
+    btn.onclick = runSearch;
     btn.textContent = "Search " + SEARCH_PRESETS[selectedPreset].label;
+    btn.style.background = "";
     dot.classList.remove("loading");
   }
+}
+
+function stopSearch() {
+  if (abortController) {
+    abortController.abort();
+    abortController = null;
+  }
+  setLoading(false);
 }
 
 function showError(msg) {
@@ -590,7 +601,7 @@ function runDemo() {
 }
 
 async function runSearch() {
-  if (isLoading) return;
+  if (isLoading) { stopSearch(); return; }
 
   var apiKey = getApiKey();
   if (!apiKey) {
@@ -639,6 +650,8 @@ async function runSearch() {
     if (entry) entry.className = "status-entry done";
   }
 
+  abortController = new AbortController();
+
   try {
     var response = await fetch("/search", {
       method: "POST",
@@ -646,7 +659,8 @@ async function runSearch() {
         "Content-Type": "application/json",
         "X-Api-Key": apiKey
       },
-      body: JSON.stringify({ query: query, max_uses: SEARCH_PRESETS[selectedPreset].max_uses || 5 })
+      body: JSON.stringify({ query: query, max_uses: SEARCH_PRESETS[selectedPreset].max_uses || 5 }),
+      signal: abortController.signal
     });
 
     if (!response.ok) {
@@ -836,12 +850,17 @@ async function runSearch() {
       });
     }
   } catch (err) {
-    var errMsg = err.message || "Unknown error";
-    if (errMsg === "Load failed" || errMsg === "Failed to fetch" || errMsg.indexOf("network") !== -1) {
-      errMsg = "Connection lost \u2014 the search may have timed out. Try again, or use a simpler preset like 'Feeling Lucky' for faster results.";
+    if (err.name === "AbortError") {
+      // User cancelled — no error to show
+    } else {
+      var errMsg = err.message || "Unknown error";
+      if (errMsg === "Load failed" || errMsg === "Failed to fetch" || errMsg.indexOf("network") !== -1) {
+        errMsg = "Connection lost \u2014 the search may have timed out. Try again, or use a simpler preset like 'Feeling Lucky' for faster results.";
+      }
+      showError("Search failed: " + errMsg);
     }
-    showError("Search failed: " + errMsg);
   } finally {
+    abortController = null;
     setLoading(false);
   }
 }
