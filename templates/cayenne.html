@@ -137,9 +137,10 @@
       background: #27272a;
     }
     .card-photo-placeholder {
-      width: 100%; height: 120px; display: flex; align-items: center; justify-content: center;
-      background: #27272a; color: #52525b; font-size: 13px;
+      width: 100%; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1e1e22 0%, #27272a 100%); color: #52525b; font-size: 12px; gap: 8px;
     }
+    .card-photo-placeholder svg { opacity: 0.3; }
 
     .card-body { padding: 18px; }
 
@@ -502,7 +503,7 @@ function renderVehicleCards(vehicles) {
     if (v.image_url) {
       photoHtml = '<img class="card-photo" src="' + escapeHtml(v.image_url) + '" alt="' + escapeHtml(v.year + ' ' + v.model) + '" onerror="this.outerHTML=\'<div class=card-photo-placeholder>No photo available</div>\'" />';
     } else {
-      photoHtml = '<div class="card-photo-placeholder">No photo available</div>';
+      photoHtml = '<div class="card-photo-placeholder"><svg width="80" height="40" viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 28h4a4 4 0 108 0h20a4 4 0 108 0h12c2 0 4-1.5 4-3.5v-5c0-1.5-.5-3-2-4l-8-5c-1.5-1-3.5-2.5-6-4-2-1.2-5-2.5-9-2.5H29c-4 0-7 1.5-10 3.5L12 12l-6 4c-2 1.5-3 3-3 5v3.5C3 26.5 5 28 8 28z" fill="#52525b"/><circle cx="16" cy="28" r="3" fill="#3f3f46"/><circle cx="56" cy="28" r="3" fill="#3f3f46"/></svg><span>No photo available</span></div>';
     }
 
     // Verdict
@@ -544,8 +545,8 @@ function renderVehicleCards(vehicles) {
     if (v.listing_url) {
       actionsHtml += '<a class="card-link card-link-primary" href="' + escapeHtml(v.listing_url) + '" target="_blank" rel="noopener noreferrer">View Listing</a>';
     }
-    if (v.vin) {
-      actionsHtml += '<a class="card-link card-link-carfax" href="https://www.carfax.com/VehicleHistory/p/Report.cfx?vin=' + escapeHtml(v.vin) + '" target="_blank" rel="noopener noreferrer">CARFAX Report</a>';
+    if (v.carfax_url) {
+      actionsHtml += '<a class="card-link card-link-carfax" href="' + escapeHtml(v.carfax_url) + '" target="_blank" rel="noopener noreferrer">Free CARFAX</a>';
     }
 
     // VIN line
