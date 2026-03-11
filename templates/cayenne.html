@@ -536,9 +536,9 @@ async function runSearch() {
   setLoading(true);
   hideError();
 
-  // Show results area
+  // Hide results until we have data
   document.getElementById("emptyState").style.display = "none";
-  document.getElementById("resultsSection").style.display = "block";
+  document.getElementById("resultsSection").style.display = "none";
   document.getElementById("vehicleCards").innerHTML = "";
   document.getElementById("vehicleCards").style.display = "none";
   document.getElementById("resultsBox").style.display = "none";
@@ -590,10 +590,12 @@ async function runSearch() {
     var reader = response.body.getReader();
     var decoder = new TextDecoder();
     var buffer = "";
-    var fullText = "";
+    var allTextBlocks = [];
+    var currentBlockText = "";
     var sources = [];
     var currentSearchEntry = null;
     var writingEntry = null;
+    var inTextBlock = false;
 
     while (true) {
       var result = await reader.read();
@@ -628,6 +630,15 @@ async function runSearch() {
           currentSearchEntry = null;
         }
 
+        // Text block ended — save it
+        if (evt.type === "content_block_stop" && inTextBlock) {
+          if (currentBlockText.trim()) {
+            allTextBlocks.push(currentBlockText);
+          }
+          currentBlockText = "";
+          inTextBlock = false;
+        }
+
         // Web search results
         if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_result") {
           markDone(currentSearchEntry);
@@ -643,23 +654,28 @@ async function runSearch() {
           }
         }
 
-        // New text block starting — reset to only keep the last (final) text block
+        // New text block starting
         if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "text") {
           markDone(writingEntry);
           writingEntry = null;
-          fullText = "";
+          currentBlockText = "";
+          inTextBlock = true;
         }
 
-        // Stream text deltas — collect silently (we render cards at the end)
+        // Stream text deltas — collect (we render cards at the end)
         if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "text_delta") {
           if (!writingEntry) {
             markDone(currentSearchEntry);
             currentSearchEntry = null;
             writingEntry = addStatus("&#9998;", "Compiling results...");
           }
-          fullText += evt.delta.text;
+          currentBlockText += evt.delta.text;
         }
       }
+    }
+    // Save any remaining text block
+    if (currentBlockText.trim()) {
+      allTextBlocks.push(currentBlockText);
     }
 
     // Mark final entries done
@@ -669,24 +685,40 @@ async function runSearch() {
       addStatus("&#10003;", "Done \u2014 " + webSearchCount + " web search" + (webSearchCount !== 1 ? "es" : "") + " completed, " + sources.length + " sources found", "done");
     }
 
-    // Try to parse JSON and render cards
-    if (fullText) {
+    // Show results section now that we have data
+    document.getElementById("resultsSection").style.display = "block";
+
+    // Try to extract JSON from any text block and render cards
+    var vehicles = null;
+    var fullText = allTextBlocks.join("\n");
+
+    // Try each text block individually (last block first — most likely to have the JSON)
+    for (var bi = allTextBlocks.length - 1; bi >= 0; bi--) {
+      var blockText = allTextBlocks[bi].trim();
       try {
         // Strip markdown code fences if present
-        var jsonStr = fullText.trim();
+        var jsonStr = blockText;
         if (jsonStr.startsWith("```")) {
           jsonStr = jsonStr.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
         }
-        var vehicles = JSON.parse(jsonStr);
-        if (Array.isArray(vehicles) && vehicles.length > 0) {
-          renderVehicleCards(vehicles);
-        } else {
-          showFallbackText(fullText);
+        // Try to find a JSON array in the text
+        var bracketStart = jsonStr.indexOf("[");
+        var bracketEnd = jsonStr.lastIndexOf("]");
+        if (bracketStart !== -1 && bracketEnd > bracketStart) {
+          var candidate = jsonStr.substring(bracketStart, bracketEnd + 1);
+          var parsed = JSON.parse(candidate);
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].year) {
+            vehicles = parsed;
+            break;
+          }
         }
-      } catch(e) {
-        // JSON parse failed — show raw text as fallback
-        showFallbackText(fullText);
-      }
+      } catch(e) { /* try next block */ }
+    }
+
+    if (vehicles && vehicles.length > 0) {
+      renderVehicleCards(vehicles);
+    } else if (fullText.trim()) {
+      showFallbackText(fullText);
     } else {
       showFallbackText("No results found. Try broadening your search.");
     }
