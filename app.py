@@ -90,7 +90,7 @@ def search():
         return jsonify({"error": "Query is required"}), 400
 
     payload = json.dumps({
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-6",
         "max_tokens": 16000,
         "system": SYSTEM_PROMPT,
         "tools": [
@@ -108,6 +108,7 @@ def search():
             "Content-Type": "application/json",
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
+            "anthropic-beta": "web-search-2025-03-05",
         },
         method="POST",
     )
