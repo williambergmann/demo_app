@@ -226,6 +226,11 @@ var SEARCH_PRESETS = [
     query: "Used 2019-2023 Porsche Cayenne S, $30K-$42K, in Texas. Prefer Porsche CPO."
   },
   {
+    label: "\u{1F3B2} Feeling Lucky",
+    query: "Find me ONE specific 2019 Porsche Cayenne currently for sale anywhere in the US. Just pick the first real listing you find on any site. Give me the full details on that single car.",
+    max_uses: 3
+  },
+  {
     label: "Custom Search",
     query: ""
   }
@@ -366,7 +371,7 @@ async function runSearch() {
         "Content-Type": "application/json",
         "X-Api-Key": apiKey
       },
-      body: JSON.stringify({ query: query })
+      body: JSON.stringify({ query: query, max_uses: SEARCH_PRESETS[selectedPreset].max_uses || 10 })
     });
 
     var data = await response.json();
