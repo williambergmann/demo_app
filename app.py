@@ -26,6 +26,11 @@ SEARCH_PRESETS = [
         "label": "Cayenne S \u2013 Texas",
         "query": "Used 2019-2023 Porsche Cayenne S, $30K-$42K, in Texas. Prefer Porsche CPO.",
     },
+    {
+        "label": "Feeling Lucky",
+        "query": "Find me ONE specific 2019 Porsche Cayenne currently for sale anywhere in the US. Just pick the first real listing you find on any site. Give me the full details on that single car.",
+        "max_uses": 3,
+    },
 ]
 
 SYSTEM_PROMPT = """You are a used car research assistant specializing in Porsche Cayenne vehicles. \
@@ -112,12 +117,18 @@ def search():
     if not query:
         return jsonify({"error": "Query is required"}), 400
 
+    max_uses = body.get("max_uses", 10)
+    if not isinstance(max_uses, int) or max_uses < 1:
+        max_uses = 10
+    if max_uses > 20:
+        max_uses = 20
+
     payload = json.dumps({
         "model": "claude-sonnet-4-6",
         "max_tokens": 8000,
         "system": SYSTEM_PROMPT,
         "tools": [
-            {"type": "web_search_20260209", "name": "web_search", "max_uses": 10}
+            {"type": "web_search_20260209", "name": "web_search", "max_uses": max_uses}
         ],
         "messages": [
             {"role": "user", "content": query}
