@@ -2,6 +2,7 @@ services:
   - type: web
     name: cayenne-finder
     runtime: python
+    plan: starter
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --timeout 120
     envVars:
