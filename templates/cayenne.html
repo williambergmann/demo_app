@@ -108,7 +108,106 @@
       color: #fca5a5; font-size: 13px; margin-bottom: 20px;
     }
 
-    /* Results */
+    /* Status log */
+    .status-log {
+      margin-bottom: 16px; padding: 14px 18px; border-radius: 10px;
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+      font-size: 13px; color: #71717a; display: none;
+    }
+    .status-log .status-entry {
+      display: flex; align-items: flex-start; gap: 8px; padding: 4px 0;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .status-log .status-entry .status-icon { flex-shrink: 0; width: 16px; text-align: center; }
+    .status-log .status-entry .status-text { flex: 1; line-height: 1.4; }
+    .status-log .status-entry.active { color: #a1a1aa; }
+    .status-log .status-entry.done { color: #52525b; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Vehicle cards */
+    .vehicle-cards { display: flex; flex-direction: column; gap: 16px; }
+
+    .vehicle-card {
+      background: #18181b; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; overflow: hidden; animation: fadeIn 0.3s ease-out;
+    }
+
+    .card-photo {
+      width: 100%; height: 200px; object-fit: cover; display: block;
+      background: #27272a;
+    }
+    .card-photo-placeholder {
+      width: 100%; height: 120px; display: flex; align-items: center; justify-content: center;
+      background: #27272a; color: #52525b; font-size: 13px;
+    }
+
+    .card-body { padding: 18px; }
+
+    .card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; margin-bottom: 12px;
+    }
+    .card-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
+    .card-price {
+      font-size: 17px; font-weight: 700; color: #22c55e; white-space: nowrap;
+      letter-spacing: -0.02em;
+    }
+
+    .card-meta {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+    }
+    .meta-pill {
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      background: rgba(255,255,255,0.05); color: #a1a1aa;
+    }
+
+    .card-features { margin-bottom: 12px; }
+    .feature-row {
+      display: flex; align-items: center; gap: 6px; padding: 3px 0;
+      font-size: 13px;
+    }
+    .feature-confirmed { color: #4ade80; }
+    .feature-unconfirmed { color: #71717a; }
+    .feature-icon { width: 16px; text-align: center; font-size: 11px; }
+
+    .card-flags {
+      padding: 8px 12px; border-radius: 8px; margin-bottom: 12px;
+      background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.12);
+      font-size: 12px; color: #fca5a5;
+    }
+
+    .card-notes {
+      font-size: 13px; color: #71717a; line-height: 1.5; margin-bottom: 14px;
+    }
+
+    .card-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .card-link {
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      text-decoration: none; transition: all 0.15s; font-family: inherit;
+    }
+    .card-link-primary {
+      background: rgba(255,255,255,0.08); color: #fafafa;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .card-link-primary:hover { background: rgba(255,255,255,0.14); }
+    .card-link-carfax {
+      background: rgba(34,197,94,0.08); color: #4ade80;
+      border: 1px solid rgba(34,197,94,0.15);
+    }
+    .card-link-carfax:hover { background: rgba(34,197,94,0.15); }
+
+    .verdict-badge {
+      display: inline-block; padding: 4px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .verdict-good { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .verdict-caution { background: rgba(234,179,8,0.12); color: #facc15; }
+    .verdict-avoid { background: rgba(239,68,68,0.12); color: #f87171; }
+
+    /* Fallback text results (if JSON parse fails) */
     .results-box {
       background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
       border-radius: 14px; padding: 24px;
@@ -127,22 +226,6 @@
       max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .source-link:hover { border-color: rgba(255,255,255,0.2); color: #fafafa; }
-
-    /* Status log */
-    .status-log {
-      margin-bottom: 16px; padding: 14px 18px; border-radius: 10px;
-      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
-      font-size: 13px; color: #71717a; display: none;
-    }
-    .status-log .status-entry {
-      display: flex; align-items: flex-start; gap: 8px; padding: 4px 0;
-      animation: fadeIn 0.2s ease-out;
-    }
-    .status-log .status-entry .status-icon { flex-shrink: 0; width: 16px; text-align: center; }
-    .status-log .status-entry .status-text { flex: 1; line-height: 1.4; }
-    .status-log .status-entry.active { color: #a1a1aa; }
-    .status-log .status-entry.done { color: #52525b; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Empty state */
     .empty-state { text-align: center; padding: 60px 20px; color: #3f3f46; }
@@ -205,7 +288,10 @@
         <div class="section-label" style="margin-bottom:0;">Results</div>
         <div id="searchCounter" style="font-size:12px; color:#52525b;"></div>
       </div>
-      <div class="results-box">
+      <!-- Card container (used when JSON parse succeeds) -->
+      <div id="vehicleCards" class="vehicle-cards"></div>
+      <!-- Fallback text (used when JSON parse fails) -->
+      <div id="resultsBox" class="results-box" style="display:none;">
         <pre id="resultsText" class="results-text"></pre>
       </div>
       <div id="sourcesSection" style="display:none; margin-top:16px;">
@@ -331,35 +417,102 @@ function hideError() {
   document.getElementById("errorBox").style.display = "none";
 }
 
-function showResults(text, sources) {
-  document.getElementById("emptyState").style.display = "none";
-  document.getElementById("resultsSection").style.display = "block";
-  document.getElementById("resultsText").textContent = text;
-  searchCount++;
-  document.getElementById("searchCounter").textContent = "Search #" + searchCount;
+function escapeHtml(str) {
+  var div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
 
-  var sourcesSection = document.getElementById("sourcesSection");
-  var sourcesList = document.getElementById("sourcesList");
-  sourcesList.innerHTML = "";
+function renderVehicleCards(vehicles) {
+  var container = document.getElementById("vehicleCards");
+  container.innerHTML = "";
+  document.getElementById("resultsBox").style.display = "none";
+  container.style.display = "flex";
 
-  if (sources && sources.length > 0) {
-    sourcesSection.style.display = "block";
-    sources.slice(0, 20).forEach(function(src) {
-      var a = document.createElement("a");
-      a.className = "source-link";
-      a.href = src.url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      try {
-        a.textContent = src.title || new URL(src.url).hostname;
-      } catch(e) {
-        a.textContent = src.url;
+  vehicles.forEach(function(v) {
+    var card = document.createElement("div");
+    card.className = "vehicle-card";
+
+    // Photo
+    var photoHtml = "";
+    if (v.image_url) {
+      photoHtml = '<img class="card-photo" src="' + escapeHtml(v.image_url) + '" alt="' + escapeHtml(v.year + ' ' + v.model) + '" onerror="this.outerHTML=\'<div class=card-photo-placeholder>No photo available</div>\'" />';
+    } else {
+      photoHtml = '<div class="card-photo-placeholder">No photo available</div>';
+    }
+
+    // Verdict
+    var verdictClass = "verdict-good";
+    if (v.verdict === "Caution") verdictClass = "verdict-caution";
+    if (v.verdict === "Avoid") verdictClass = "verdict-avoid";
+
+    // Features
+    var allMustHave = ["Ventilated Seats", "Adaptive Cruise Control", "Panoramic Roof"];
+    var confirmed = v.features_confirmed || [];
+    var unconfirmed = v.features_unconfirmed || [];
+    var featuresHtml = "";
+    allMustHave.forEach(function(f) {
+      var isConfirmed = confirmed.some(function(c) { return c.toLowerCase().indexOf(f.toLowerCase().split(" ")[0].toLowerCase()) !== -1; });
+      if (isConfirmed) {
+        featuresHtml += '<div class="feature-row feature-confirmed"><span class="feature-icon">&#10003;</span> ' + escapeHtml(f) + '</div>';
+      } else {
+        featuresHtml += '<div class="feature-row feature-unconfirmed"><span class="feature-icon">?</span> ' + escapeHtml(f) + ' (unconfirmed)</div>';
       }
-      sourcesList.appendChild(a);
     });
-  } else {
-    sourcesSection.style.display = "none";
-  }
+
+    // Red flags
+    var flagsHtml = "";
+    if (v.red_flags && v.red_flags.length > 0) {
+      flagsHtml = '<div class="card-flags">&#9888; ' + v.red_flags.map(escapeHtml).join(" &middot; ") + '</div>';
+    }
+
+    // Meta pills
+    var pills = [];
+    if (v.mileage) pills.push(v.mileage);
+    if (v.location) pills.push(v.location);
+    if (v.distance_from_dfw) pills.push(v.distance_from_dfw + " from DFW");
+    if (v.owners) pills.push(v.owners + (v.owners === "1" ? " owner" : " owners"));
+    if (v.cpo) pills.push("Porsche CPO");
+    var pillsHtml = pills.map(function(p) { return '<span class="meta-pill">' + escapeHtml(p) + '</span>'; }).join("");
+
+    // Action links
+    var actionsHtml = "";
+    if (v.listing_url) {
+      actionsHtml += '<a class="card-link card-link-primary" href="' + escapeHtml(v.listing_url) + '" target="_blank" rel="noopener noreferrer">View Listing</a>';
+    }
+    if (v.vin) {
+      actionsHtml += '<a class="card-link card-link-carfax" href="https://www.carfax.com/VehicleHistory/p/Report.cfx?vin=' + escapeHtml(v.vin) + '" target="_blank" rel="noopener noreferrer">CARFAX Report</a>';
+    }
+
+    // VIN line
+    var vinHtml = v.vin ? '<span class="meta-pill" style="font-family:JetBrains Mono,monospace;font-size:11px;">' + escapeHtml(v.vin) + '</span>' : '';
+
+    card.innerHTML = photoHtml +
+      '<div class="card-body">' +
+        '<div class="card-header">' +
+          '<div><div class="card-title">' + escapeHtml((v.year || "") + " Porsche " + (v.model || "Cayenne") + (v.trim && v.trim !== "Base" ? " " + v.trim : "")) + '</div>' +
+            '<div style="font-size:13px;color:#71717a;margin-top:2px;">' + escapeHtml(v.dealer || "") + '</div>' +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div class="card-price">' + escapeHtml(v.price || "Price N/A") + '</div>' +
+            '<div style="margin-top:4px;"><span class="verdict-badge ' + verdictClass + '">' + escapeHtml(v.verdict || "Unknown") + '</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card-meta">' + pillsHtml + vinHtml + '</div>' +
+        '<div class="card-features">' + featuresHtml + '</div>' +
+        flagsHtml +
+        (v.notes ? '<div class="card-notes">' + escapeHtml(v.notes) + '</div>' : '') +
+        '<div class="card-actions">' + actionsHtml + '</div>' +
+      '</div>';
+
+    container.appendChild(card);
+  });
+}
+
+function showFallbackText(text) {
+  document.getElementById("vehicleCards").style.display = "none";
+  document.getElementById("resultsBox").style.display = "block";
+  document.getElementById("resultsText").textContent = text;
 }
 
 async function runSearch() {
@@ -383,10 +536,12 @@ async function runSearch() {
   setLoading(true);
   hideError();
 
-  // Show results area immediately for streaming
+  // Show results area
   document.getElementById("emptyState").style.display = "none";
   document.getElementById("resultsSection").style.display = "block";
-  document.getElementById("resultsText").textContent = "";
+  document.getElementById("vehicleCards").innerHTML = "";
+  document.getElementById("vehicleCards").style.display = "none";
+  document.getElementById("resultsBox").style.display = "none";
   document.getElementById("sourcesSection").style.display = "none";
   searchCount++;
   document.getElementById("searchCounter").textContent = "Search #" + searchCount;
@@ -458,7 +613,7 @@ async function runSearch() {
           var evt = JSON.parse(raw);
         } catch(e) { continue; }
 
-        // Web search tool use — show what's being searched
+        // Web search tool use
         if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_use") {
           markDone(currentSearchEntry);
           markDone(writingEntry);
@@ -467,19 +622,13 @@ async function runSearch() {
           currentSearchEntry = addStatus('<span class="spinner"></span>', "Searching the web...");
         }
 
-        // Web search input delta — show the actual query
-        if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "input_json_delta") {
-          // The query comes in as partial JSON, we'll update when the block stops
-        }
-
-        // Web search tool use complete — show query
+        // Web search tool use complete
         if (evt.type === "content_block_stop" && currentSearchEntry && !currentSearchEntry.classList.contains("done")) {
-          // Mark search as done
           markDone(currentSearchEntry);
           currentSearchEntry = null;
         }
 
-        // Web search results — show what was found
+        // Web search results
         if (evt.type === "content_block_start" && evt.content_block && evt.content_block.type === "web_search_tool_result") {
           markDone(currentSearchEntry);
           currentSearchEntry = null;
@@ -499,18 +648,16 @@ async function runSearch() {
           markDone(writingEntry);
           writingEntry = null;
           fullText = "";
-          document.getElementById("resultsText").textContent = "";
         }
 
-        // Stream text deltas
+        // Stream text deltas — collect silently (we render cards at the end)
         if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "text_delta") {
           if (!writingEntry) {
             markDone(currentSearchEntry);
             currentSearchEntry = null;
-            writingEntry = addStatus("&#9998;", "Writing results...");
+            writingEntry = addStatus("&#9998;", "Compiling results...");
           }
           fullText += evt.delta.text;
-          document.getElementById("resultsText").textContent = fullText;
         }
       }
     }
@@ -522,7 +669,29 @@ async function runSearch() {
       addStatus("&#10003;", "Done \u2014 " + webSearchCount + " web search" + (webSearchCount !== 1 ? "es" : "") + " completed, " + sources.length + " sources found", "done");
     }
 
-    // Show sources at the end
+    // Try to parse JSON and render cards
+    if (fullText) {
+      try {
+        // Strip markdown code fences if present
+        var jsonStr = fullText.trim();
+        if (jsonStr.startsWith("```")) {
+          jsonStr = jsonStr.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+        }
+        var vehicles = JSON.parse(jsonStr);
+        if (Array.isArray(vehicles) && vehicles.length > 0) {
+          renderVehicleCards(vehicles);
+        } else {
+          showFallbackText(fullText);
+        }
+      } catch(e) {
+        // JSON parse failed — show raw text as fallback
+        showFallbackText(fullText);
+      }
+    } else {
+      showFallbackText("No results found. Try broadening your search.");
+    }
+
+    // Show sources
     var sourcesList = document.getElementById("sourcesList");
     var sourcesSection = document.getElementById("sourcesSection");
     sourcesList.innerHTML = "";
@@ -538,14 +707,10 @@ async function runSearch() {
         sourcesList.appendChild(a);
       });
     }
-
-    if (!fullText) {
-      document.getElementById("resultsText").textContent = "No results found. Try broadening your search.";
-    }
   } catch (err) {
     var errMsg = err.message || "Unknown error";
     if (errMsg === "Load failed" || errMsg === "Failed to fetch" || errMsg.indexOf("network") !== -1) {
-      errMsg = "Connection lost — the search may have timed out. Try again, or use a simpler preset like 'Feeling Lucky' for faster results.";
+      errMsg = "Connection lost \u2014 the search may have timed out. Try again, or use a simpler preset like 'Feeling Lucky' for faster results.";
     }
     showError("Search failed: " + errMsg);
   } finally {
