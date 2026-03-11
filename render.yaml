@@ -7,4 +7,4 @@ services:
     startCommand: gunicorn app:app --timeout 120
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.11.7"
