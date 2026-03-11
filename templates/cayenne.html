@@ -236,7 +236,7 @@ var searchCount = 0;
 var isLoading = false;
 
 function getApiKey() {
-  return localStorage.getItem("cayenne_api_key") || "";
+  return (localStorage.getItem("cayenne_api_key") || "").replace(/\s/g, "");
 }
 
 function showKeyModal() {
@@ -246,7 +246,7 @@ function showKeyModal() {
 }
 
 function saveApiKey() {
-  var key = document.getElementById("keyInput").value.trim();
+  var key = document.getElementById("keyInput").value.replace(/\s/g, "");
   if (key) {
     localStorage.setItem("cayenne_api_key", key);
     document.getElementById("keyModal").style.display = "none";
