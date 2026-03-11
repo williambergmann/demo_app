@@ -24,6 +24,7 @@
 - Render deploys from `master` branch
 - After merging PRs, wait for Render to auto-redeploy
 - Python 3.11.7, gunicorn with 120s timeout
+- **ALWAYS complete the full deploy cycle**: push to feature branch → create PR → merge PR with `gh pr merge --merge`. Never stop after creating the PR.
 
 ## Security
 - API keys are stored in browser localStorage, passed via `X-Api-Key` header
