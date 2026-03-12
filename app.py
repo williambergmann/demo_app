@@ -147,7 +147,7 @@ def search():
         "stream": True,
         "system": SYSTEM_PROMPT,
         "tools": [
-            {"type": "web_search_20260209", "name": "web_search", "max_uses": max_uses}
+            {"type": "web_search_20250305", "name": "web_search", "max_uses": max_uses}
         ],
         "messages": [
             {"role": "user", "content": query + "\n\nRemember: respond with ONLY a raw JSON array. No markdown, no commentary, no apologies. Start your response with [ and end with ]."}
